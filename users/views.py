@@ -10,17 +10,15 @@ User = get_user_model()
 
 
 # =========================
-# REGISTER
+# REGISTER (DEBUG JSON FORCÉ)
 # =========================
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
 
-    # 🔥 support JSON + fallback PowerShell / Render
+    # 🔥 FORÇAGE JSON (ignore DRF parsing)
     try:
-        data = request.data
-        if not data:
-            data = json.loads(request.body.decode('utf-8'))
+        data = json.loads(request.body.decode('utf-8'))
     except Exception:
         return Response({"error": "JSON invalide"}, status=400)
 
@@ -28,35 +26,31 @@ def register(request):
     password = data.get("password")
     email = data.get("email", "")
 
-    # 🔒 Validation
     if not username or not password:
         return Response(
             {"error": "Champs manquants"},
             status=400
         )
 
-    # 🔒 Vérifie si utilisateur existe
     if User.objects.filter(username=username).exists():
         return Response(
             {"error": "Utilisateur existe déjà"},
             status=400
         )
 
-    # 👤 Création utilisateur
     user = User.objects.create_user(
         username=username,
         password=password,
         email=email
     )
 
-    # 🔥 Gestion rôle si présent
     if hasattr(user, "role"):
         user.role = "patient"
         user.save()
 
     return Response({
-        "message": "Utilisateur créé avec succès"
-    }, status=201)
+        "message": "OK"
+    })
 
 
 # =========================
@@ -66,18 +60,15 @@ def register(request):
 @permission_classes([AllowAny])
 def login_view(request):
 
-    # 🔥 même protection JSON
+    # 🔥 même logique pour éviter bug
     try:
-        data = request.data
-        if not data:
-            data = json.loads(request.body.decode('utf-8'))
+        data = json.loads(request.body.decode('utf-8'))
     except Exception:
         return Response({"detail": "JSON invalide"}, status=400)
 
     username = data.get("username")
     password = data.get("password")
 
-    # 🔒 Validation
     if not username or not password:
         return Response(
             {"detail": "Champs manquants"},
