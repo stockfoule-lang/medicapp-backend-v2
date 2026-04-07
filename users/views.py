@@ -15,7 +15,7 @@ User = get_user_model()
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-
+    return Response({"test": "HELLO"})
     # 🔥 FIX CRITIQUE → support JSON + fallback
     try:
         data = request.data
