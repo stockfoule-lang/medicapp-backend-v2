@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
+import json
+
 User = get_user_model()
 
 
@@ -13,11 +15,19 @@ User = get_user_model()
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    username = request.data.get("username")
-    password = request.data.get("password")
-    email = request.data.get("email", "")
 
-    # 🔒 Validation
+    # 🔥 FIX CRITIQUE → support JSON + fallback
+    try:
+        data = request.data
+        if not data:
+            data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return Response({"error": "JSON invalide"}, status=400)
+
+    username = data.get("username")
+    password = data.get("password")
+    email = data.get("email", "")
+
     if not username or not password:
         return Response(
             {"error": "Champs manquants"},
@@ -30,14 +40,12 @@ def register(request):
             status=400
         )
 
-    # 👤 Création utilisateur
     user = User.objects.create_user(
         username=username,
         password=password,
         email=email
     )
 
-    # 🔥 Gestion du rôle si présent
     if hasattr(user, "role"):
         user.role = "patient"
         user.save()
@@ -53,10 +61,18 @@ def register(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    username = request.data.get("username")
-    password = request.data.get("password")
 
-    # 🔒 Validation
+    # 🔥 même correction ici pour éviter futur bug
+    try:
+        data = request.data
+        if not data:
+            data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return Response({"detail": "JSON invalide"}, status=400)
+
+    username = data.get("username")
+    password = data.get("password")
+
     if not username or not password:
         return Response(
             {"detail": "Champs manquants"},
