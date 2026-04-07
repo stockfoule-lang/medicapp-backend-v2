@@ -7,7 +7,12 @@ SECRET_KEY = 'django-insecure-change-this'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.1.35", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "192.168.1.35",
+    ".onrender.com",  # ✅ IMPORTANT POUR RENDER
+]
 
 
 INSTALLED_APPS = [
@@ -31,7 +36,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # ⚠️ DOIT ÊTRE EN PREMIER
+    'corsheaders.middleware.CorsMiddleware',  # ✅ DOIT ÊTRE EN PREMIER
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -80,14 +85,24 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = 'static/'
+# =========================
+# 📦 STATIC FILES (CRITIQUE POUR RENDER)
+# =========================
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+
+# =========================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
 
 
-# 🔥 CORS CONFIGURATION POUR FLUTTER WEB
+# =========================
+# 🌍 CORS (FLUTTER)
+# =========================
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -105,7 +120,7 @@ CORS_ALLOW_HEADERS = [
 
 
 # =========================
-# 🔐 DJANGO REST + JWT (CRITIQUE)
+# 🔐 DJANGO REST + JWT
 # =========================
 
 REST_FRAMEWORK = {
