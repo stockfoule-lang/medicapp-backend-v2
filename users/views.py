@@ -2,14 +2,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, get_user_model
-
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
 
 # =========================
-# REGISTER 🔥 (NOUVEAU)
+# REGISTER
 # =========================
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -18,6 +17,7 @@ def register(request):
     password = request.data.get("password")
     email = request.data.get("email", "")
 
+    # 🔒 Validation
     if not username or not password:
         return Response(
             {"error": "Champs manquants"},
@@ -30,20 +30,21 @@ def register(request):
             status=400
         )
 
+    # 👤 Création utilisateur
     user = User.objects.create_user(
         username=username,
         password=password,
         email=email
     )
 
-    # 🔥 IMPORTANT → si ton modèle a un role
+    # 🔥 Gestion du rôle si présent
     if hasattr(user, "role"):
         user.role = "patient"
         user.save()
 
     return Response({
-        "message": "Utilisateur créé"
-    })
+        "message": "Utilisateur créé avec succès"
+    }, status=201)
 
 
 # =========================
@@ -54,6 +55,13 @@ def register(request):
 def login_view(request):
     username = request.data.get("username")
     password = request.data.get("password")
+
+    # 🔒 Validation
+    if not username or not password:
+        return Response(
+            {"detail": "Champs manquants"},
+            status=400
+        )
 
     user = authenticate(username=username, password=password)
 
@@ -70,7 +78,10 @@ def login_view(request):
             "role": getattr(user, "role", "patient"),
         })
 
-    return Response({"detail": "Identifiants invalides"}, status=401)
+    return Response(
+        {"detail": "Identifiants invalides"},
+        status=401
+    )
 
 
 # =========================
