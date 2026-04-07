@@ -15,8 +15,8 @@ User = get_user_model()
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    return Response({"test": "HELLO"})
-    # 🔥 FIX CRITIQUE → support JSON + fallback
+
+    # 🔥 support JSON + fallback PowerShell / Render
     try:
         data = request.data
         if not data:
@@ -28,24 +28,28 @@ def register(request):
     password = data.get("password")
     email = data.get("email", "")
 
+    # 🔒 Validation
     if not username or not password:
         return Response(
             {"error": "Champs manquants"},
             status=400
         )
 
+    # 🔒 Vérifie si utilisateur existe
     if User.objects.filter(username=username).exists():
         return Response(
             {"error": "Utilisateur existe déjà"},
             status=400
         )
 
+    # 👤 Création utilisateur
     user = User.objects.create_user(
         username=username,
         password=password,
         email=email
     )
 
+    # 🔥 Gestion rôle si présent
     if hasattr(user, "role"):
         user.role = "patient"
         user.save()
@@ -62,7 +66,7 @@ def register(request):
 @permission_classes([AllowAny])
 def login_view(request):
 
-    # 🔥 même correction ici pour éviter futur bug
+    # 🔥 même protection JSON
     try:
         data = request.data
         if not data:
@@ -73,6 +77,7 @@ def login_view(request):
     username = data.get("username")
     password = data.get("password")
 
+    # 🔒 Validation
     if not username or not password:
         return Response(
             {"detail": "Champs manquants"},
