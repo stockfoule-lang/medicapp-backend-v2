@@ -2,7 +2,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from config.firebase import send_push
 from .models import Appointment
 import json
 
@@ -38,7 +37,7 @@ def get_appointments(request, patient_id):
 
 
 # =========================
-# CREATE APPOINTMENT + NOTIF 🔥
+# CREATE APPOINTMENT + NOTIF (SIMULÉE)
 # =========================
 @api_view(['POST'])
 def create_appointment(request):
@@ -79,18 +78,10 @@ def create_appointment(request):
         )
 
         # =========================
-        # 🔔 ENVOI NOTIFICATION
+        # 🔔 NOTIFICATION (SIMULATION)
         # =========================
         if hasattr(patient, "fcm_token") and patient.fcm_token:
-            try:
-                send_push(
-                    patient.fcm_token,
-                    "Nouveau rendez-vous",
-                    f"{data.get('title')} le {data.get('date')} à {data.get('time')}"
-                )
-                print("🔥 Notification envoyée au patient")
-            except Exception as e:
-                print("❌ Erreur envoi notification :", e)
+            print("🔥 Push simulé envoyé à :", patient.fcm_token)
         else:
             print("⚠️ Aucun fcm_token pour ce patient")
 

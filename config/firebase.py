@@ -1,33 +1,25 @@
-try:
-    import firebase_admin
-    from firebase_admin import credentials, messaging
+import firebase_admin
+from firebase_admin import credentials, messaging
 
-    # 🔥 Essaye de charger la clé
+def send_push(token, title, body):
     try:
-        cred = credentials.Certificate("firebase_key.json")
-        firebase_admin.initialize_app(cred)
-        FIREBASE_READY = True
-        print("🔥 Firebase READY")
-    except Exception as e:
-        FIREBASE_READY = False
-        print("🔥 Firebase INIT FAIL :", e)
-
-    def send_push(token, title, body):
-        if not FIREBASE_READY:
-            print("⚠️ Firebase OFF → push ignoré")
-            return
+        if not firebase_admin._apps:
+            try:
+                cred = credentials.Certificate("firebase_key.json")
+                firebase_admin.initialize_app(cred)
+            except Exception:
+                print("Firebase not initialized (no key)")
+                return
 
         message = messaging.Message(
             notification=messaging.Notification(
                 title=title,
-                body=body,
+                body=body
             ),
             token=token,
         )
+
         messaging.send(message)
 
-except Exception as e:
-    print("🔥 Firebase module KO :", e)
-
-    def send_push(token, title, body):
-        print("⚠️ Firebase non dispo")
+    except Exception as e:
+        print("Firebase error:", e)
