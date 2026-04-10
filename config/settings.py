@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # Local apps
-    'users',
+    'users.apps.UsersConfig',
     'medicaments',
     'treatments',
     'appointments',
