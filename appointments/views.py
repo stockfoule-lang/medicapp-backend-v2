@@ -2,8 +2,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
-
+from config.firebase import send_push
 from .models import Appointment
+import json
 
 User = get_user_model()
 
@@ -13,20 +14,19 @@ User = get_user_model()
 # =========================
 @api_view(['GET'])
 def get_appointments(request, patient_id):
-
     try:
         appointments = Appointment.objects.filter(patient_id=patient_id)
 
-        data = []
-
-        for a in appointments:
-            data.append({
+        data = [
+            {
                 "id": a.id,
                 "title": a.title or "",
                 "date": str(a.date) if a.date else "",
                 "time": str(a.time) if a.time else "",
                 "instructions": a.instructions or ""
-            })
+            }
+            for a in appointments
+        ]
 
         return Response(data)
 
@@ -38,13 +38,22 @@ def get_appointments(request, patient_id):
 
 
 # =========================
-# CREATE APPOINTMENT
+# CREATE APPOINTMENT + NOTIF 🔥
 # =========================
 @api_view(['POST'])
 def create_appointment(request):
 
+    # 🔥 Parsing JSON fiable (Render)
     try:
-        patient_id = request.data.get("patient_id")
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return Response(
+            {"error": "JSON invalide"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        patient_id = data.get("patient_id")
 
         if not patient_id:
             return Response(
@@ -60,13 +69,30 @@ def create_appointment(request):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # 🔥 Création du RDV
         appointment = Appointment.objects.create(
             patient=patient,
-            title=request.data.get("title", ""),
-            date=request.data.get("date"),
-            time=request.data.get("time"),
-            instructions=request.data.get("instructions", "")
+            title=data.get("title", ""),
+            date=data.get("date"),
+            time=data.get("time"),
+            instructions=data.get("instructions", "")
         )
+
+        # =========================
+        # 🔔 ENVOI NOTIFICATION
+        # =========================
+        if hasattr(patient, "fcm_token") and patient.fcm_token:
+            try:
+                send_push(
+                    patient.fcm_token,
+                    "Nouveau rendez-vous",
+                    f"{data.get('title')} le {data.get('date')} à {data.get('time')}"
+                )
+                print("🔥 Notification envoyée au patient")
+            except Exception as e:
+                print("❌ Erreur envoi notification :", e)
+        else:
+            print("⚠️ Aucun fcm_token pour ce patient")
 
         return Response({
             "message": "Rendez-vous créé",
