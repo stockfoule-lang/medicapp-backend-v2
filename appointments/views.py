@@ -4,7 +4,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from .models import Appointment
 import json
-from datetime import datetime  # ✅ AJOUT IMPORTANT
+from datetime import datetime
 from notifications.push import send_push_notification
 
 User = get_user_model()
@@ -71,7 +71,7 @@ def create_appointment(request):
             )
 
         # =========================
-        # 🔥 CONVERSION DATE / TIME (FIX CRITIQUE)
+        # 🔥 CONVERSION DATE / TIME (FIX FINAL)
         # =========================
         date_str = data.get("date")
         time_str = data.get("time")
@@ -79,20 +79,25 @@ def create_appointment(request):
         date_obj = None
         time_obj = None
 
+        # ✅ gestion multi-format date
         try:
             if date_str:
-                date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-        except:
-            print("⚠️ Erreur parsing date :", date_str)
+                try:
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+                except:
+                    date_obj = datetime.strptime(date_str, "%d/%m/%Y").date()
+        except Exception as e:
+            print("❌ Erreur parsing date :", date_str, e)
 
+        # ✅ gestion heure
         try:
             if time_str:
                 time_obj = datetime.strptime(time_str, "%H:%M").time()
-        except:
-            print("⚠️ Erreur parsing time :", time_str)
+        except Exception as e:
+            print("❌ Erreur parsing time :", time_str, e)
 
         # =========================
-        # 🔥 Création du RDV (FIX)
+        # 🔥 Création du RDV
         # =========================
         appointment = Appointment.objects.create(
             patient=patient,
