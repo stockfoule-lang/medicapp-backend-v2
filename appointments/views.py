@@ -4,6 +4,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from .models import Appointment
 import json
+from datetime import datetime  # ✅ AJOUT IMPORTANT
 from notifications.push import send_push_notification
 
 User = get_user_model()
@@ -70,13 +71,34 @@ def create_appointment(request):
             )
 
         # =========================
-        # 🔥 Création du RDV
+        # 🔥 CONVERSION DATE / TIME (FIX CRITIQUE)
+        # =========================
+        date_str = data.get("date")
+        time_str = data.get("time")
+
+        date_obj = None
+        time_obj = None
+
+        try:
+            if date_str:
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except:
+            print("⚠️ Erreur parsing date :", date_str)
+
+        try:
+            if time_str:
+                time_obj = datetime.strptime(time_str, "%H:%M").time()
+        except:
+            print("⚠️ Erreur parsing time :", time_str)
+
+        # =========================
+        # 🔥 Création du RDV (FIX)
         # =========================
         appointment = Appointment.objects.create(
             patient=patient,
             title=data.get("title", ""),
-            date=data.get("date"),
-            time=data.get("time"),
+            date=date_obj,
+            time=time_obj,
             instructions=data.get("instructions", "")
         )
 
@@ -97,7 +119,6 @@ def create_appointment(request):
                 print("⚠️ Aucun fcm_token pour ce patient")
 
         except Exception as notif_error:
-            # ⚠️ ne JAMAIS bloquer le flux métier
             print("❌ Erreur notification :", str(notif_error))
 
         return Response({
