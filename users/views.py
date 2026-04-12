@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, get_user_model
+from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
@@ -21,10 +22,10 @@ def register(request):
     email = data.get("email", "")
 
     if not username or not password:
-        return Response({"error": "Champs manquants"}, status=400)
+        return Response({"error": "Champs manquants"}, status=status.HTTP_400_BAD_REQUEST)
 
     if User.objects.filter(username=username).exists():
-        return Response({"error": "Utilisateur existe déjà"}, status=400)
+        return Response({"error": "Utilisateur existe déjà"}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(
         username=username,
@@ -32,11 +33,12 @@ def register(request):
         email=email
     )
 
+    # 🔥 Par défaut patient
     if hasattr(user, "role"):
         user.role = "patient"
         user.save()
 
-    return Response({"message": "OK"})
+    return Response({"message": "OK"}, status=status.HTTP_201_CREATED)
 
 
 # =========================
@@ -52,12 +54,14 @@ def login_view(request):
     password = data.get("password")
 
     if not username or not password:
-        return Response({"detail": "Champs manquants"}, status=400)
+        return Response({"detail": "Champs manquants"}, status=status.HTTP_400_BAD_REQUEST)
 
     user = authenticate(username=username, password=password)
 
     if user is not None:
         refresh = RefreshToken.for_user(user)
+
+        print("✅ LOGIN OK :", user.username)
 
         return Response({
             "access": str(refresh.access_token),
@@ -69,7 +73,9 @@ def login_view(request):
             "role": getattr(user, "role", "patient"),
         })
 
-    return Response({"detail": "Identifiants invalides"}, status=401)
+    print("❌ LOGIN FAILED :", username)
+
+    return Response({"detail": "Identifiants invalides"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 # =========================
@@ -100,31 +106,36 @@ def search_patients(request):
 
 
 # =========================
-# SAVE FCM TOKEN (AVEC DEBUG)
+# SAVE FCM TOKEN (VERSION FINALE)
 # =========================
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def save_fcm_token(request):
 
-    token = request.data.get("fcm_token")
-
-    # 🔥 DEBUG IMPORTANT
-    print("🔥 TOKEN REÇU BACKEND :", token)
-    print("👤 USER :", request.user)
-
-    if not token:
-        return Response({"error": "Token manquant"}, status=400)
-
     try:
         user = request.user
+        token = request.data.get("fcm_token")
 
+        print("🔥 TOKEN REÇU BACKEND :", token)
+        print("👤 USER :", user.username)
+
+        if not token:
+            return Response(
+                {"error": "fcm_token requis"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 🔥 Sauvegarde sur le bon user
         user.fcm_token = token
         user.save()
 
-        print("✅ TOKEN SAUVEGARDÉ EN DB")
+        print("💾 TOKEN SAUVEGARDÉ EN DB POUR :", user.username)
 
-        return Response({"message": "Token enregistré"})
+        return Response({"message": "Token enregistré"}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        print("❌ ERREUR SAVE TOKEN :", e)
-        return Response({"error": str(e)}, status=500)
+        print("❌ ERREUR SAVE TOKEN :", str(e))
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
