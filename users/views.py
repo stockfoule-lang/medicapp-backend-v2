@@ -14,7 +14,7 @@ User = get_user_model()
 @permission_classes([AllowAny])
 def register(request):
 
-    data = request.data  # ✅ FIX
+    data = request.data
 
     username = data.get("username")
     password = data.get("password")
@@ -46,7 +46,7 @@ def register(request):
 @permission_classes([AllowAny])
 def login_view(request):
 
-    data = request.data  # ✅ FIX
+    data = request.data
 
     username = data.get("username")
     password = data.get("password")
@@ -100,20 +100,31 @@ def search_patients(request):
 
 
 # =========================
-# SAVE FCM TOKEN
+# SAVE FCM TOKEN (AVEC DEBUG)
 # =========================
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def save_fcm_token(request):
 
-    token = request.data.get("fcm_token")  # ✅ FIX
+    token = request.data.get("fcm_token")
+
+    # 🔥 DEBUG IMPORTANT
+    print("🔥 TOKEN REÇU BACKEND :", token)
+    print("👤 USER :", request.user)
 
     if not token:
         return Response({"error": "Token manquant"}, status=400)
 
-    user = request.user  # ✅ FIX PROPRE (JWT)
+    try:
+        user = request.user
 
-    user.fcm_token = token
-    user.save()
+        user.fcm_token = token
+        user.save()
 
-    return Response({"message": "Token enregistré"})
+        print("✅ TOKEN SAUVEGARDÉ EN DB")
+
+        return Response({"message": "Token enregistré"})
+
+    except Exception as e:
+        print("❌ ERREUR SAVE TOKEN :", e)
+        return Response({"error": str(e)}, status=500)

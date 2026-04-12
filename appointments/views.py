@@ -4,6 +4,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from .models import Appointment
 import json
+from notifications.push import send_push_notification
 
 User = get_user_model()
 
@@ -37,7 +38,7 @@ def get_appointments(request, patient_id):
 
 
 # =========================
-# CREATE APPOINTMENT + NOTIF (SIMULÉE)
+# CREATE APPOINTMENT + NOTIFICATION RÉELLE
 # =========================
 @api_view(['POST'])
 def create_appointment(request):
@@ -78,12 +79,20 @@ def create_appointment(request):
         )
 
         # =========================
-        # 🔔 NOTIFICATION (SIMULATION)
+        # 🔔 NOTIFICATION RÉELLE FIREBASE
         # =========================
-        if hasattr(patient, "fcm_token") and patient.fcm_token:
-            print("🔥 Push simulé envoyé à :", patient.fcm_token)
-        else:
-            print("⚠️ Aucun fcm_token pour ce patient")
+        try:
+            token = getattr(patient, "fcm_token", None)
+
+            if token:
+                send_push_notification(token, appointment)
+                print("✅ Notification envoyée à :", token)
+            else:
+                print("⚠️ Aucun fcm_token pour ce patient")
+
+        except Exception as notif_error:
+            # 👉 ne JAMAIS casser la création du RDV
+            print("❌ Erreur notification :", notif_error)
 
         return Response({
             "message": "Rendez-vous créé",
