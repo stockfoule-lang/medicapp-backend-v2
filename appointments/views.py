@@ -38,7 +38,7 @@ def get_appointments(request, patient_id):
 
 
 # =========================
-# CREATE APPOINTMENT + NOTIFICATION RÉELLE
+# CREATE APPOINTMENT + NOTIFICATION FIREBASE
 # =========================
 @api_view(['POST'])
 def create_appointment(request):
@@ -69,7 +69,9 @@ def create_appointment(request):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # =========================
         # 🔥 Création du RDV
+        # =========================
         appointment = Appointment.objects.create(
             patient=patient,
             title=data.get("title", ""),
@@ -79,20 +81,24 @@ def create_appointment(request):
         )
 
         # =========================
-        # 🔔 NOTIFICATION RÉELLE FIREBASE
+        # 🔔 NOTIFICATION FIREBASE
         # =========================
         try:
             token = getattr(patient, "fcm_token", None)
 
             if token:
-                send_push_notification(token, appointment)
+                send_push_notification(
+                    token=token,
+                    title="📅 Nouveau rendez-vous",
+                    body=f"{appointment.title} le {appointment.date} à {appointment.time}"
+                )
                 print("✅ Notification envoyée à :", token)
             else:
                 print("⚠️ Aucun fcm_token pour ce patient")
 
         except Exception as notif_error:
-            # 👉 ne JAMAIS casser la création du RDV
-            print("❌ Erreur notification :", notif_error)
+            # ⚠️ ne JAMAIS bloquer le flux métier
+            print("❌ Erreur notification :", str(notif_error))
 
         return Response({
             "message": "Rendez-vous créé",

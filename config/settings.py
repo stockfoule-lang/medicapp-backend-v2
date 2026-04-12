@@ -1,6 +1,9 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+import json
+import firebase_admin
+from firebase_admin import credentials
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -138,11 +141,11 @@ CORS_ALLOW_HEADERS = [
 
 
 # =========================
-# 🔐 DJANGO REST + JWT (CRITIQUE FIX)
+# 🔐 DJANGO REST + JWT
 # =========================
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # ✅ FIX MAJEUR
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -154,13 +157,28 @@ REST_FRAMEWORK = {
 # 🔑 JWT CONFIG
 # =========================
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),  # 🔥 plus stable pour tests
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 
 # =========================
-# 🔥 FIREBASE (OPTIONNEL MAIS PRÊT)
+# 🔥 FIREBASE CONFIG + INIT (CRITIQUE)
 # =========================
+
 FIREBASE_CREDENTIALS = os.environ.get("FIREBASE_CREDENTIALS")
+
+if FIREBASE_CREDENTIALS:
+    try:
+        cred_dict = json.loads(FIREBASE_CREDENTIALS)
+        cred = credentials.Certificate(cred_dict)
+
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app(cred)
+            print("🔥 Firebase initialized")
+
+    except Exception as e:
+        print("❌ Firebase init error:", e)
+else:
+    print("⚠️ FIREBASE_CREDENTIALS manquant")
