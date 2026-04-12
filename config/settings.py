@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import timedelta
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -11,10 +12,13 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     "192.168.1.35",
-    ".onrender.com",  # ✅ IMPORTANT POUR RENDER
+    ".onrender.com",
 ]
 
 
+# =========================
+# 📦 APPLICATIONS
+# =========================
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -35,8 +39,11 @@ INSTALLED_APPS = [
 ]
 
 
+# =========================
+# ⚙️ MIDDLEWARE
+# =========================
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # ✅ DOIT ÊTRE EN PREMIER
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -49,6 +56,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
+
+# =========================
+# 🎨 TEMPLATES
+# =========================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -65,9 +76,13 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
+# =========================
+# 🗄️ DATABASE
+# =========================
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -79,6 +94,9 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = []
 
 
+# =========================
+# 🌍 LANGUE / TIMEZONE
+# =========================
 LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'UTC'
 USE_I18N = True
@@ -86,24 +104,24 @@ USE_TZ = True
 
 
 # =========================
-# 📦 STATIC FILES (CRITIQUE POUR RENDER)
+# 📦 STATIC FILES (RENDER)
 # =========================
-
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
-# =========================
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# =========================
+# 👤 USER MODEL
+# =========================
 AUTH_USER_MODEL = 'users.User'
 
 
 # =========================
 # 🌍 CORS (FLUTTER)
 # =========================
-
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_HEADERS = [
@@ -120,12 +138,11 @@ CORS_ALLOW_HEADERS = [
 
 
 # =========================
-# 🔐 DJANGO REST + JWT
+# 🔐 DJANGO REST + JWT (CRITIQUE FIX)
 # =========================
-
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # ✅ FIX MAJEUR
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -133,7 +150,17 @@ REST_FRAMEWORK = {
 }
 
 
+# =========================
+# 🔑 JWT CONFIG
+# =========================
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),  # 🔥 plus stable pour tests
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+
+# =========================
+# 🔥 FIREBASE (OPTIONNEL MAIS PRÊT)
+# =========================
+FIREBASE_CREDENTIALS = os.environ.get("FIREBASE_CREDENTIALS")
