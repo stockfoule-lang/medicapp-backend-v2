@@ -22,10 +22,16 @@ def register(request):
     email = data.get("email", "")
 
     if not username or not password:
-        return Response({"error": "Champs manquants"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Champs manquants"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     if User.objects.filter(username=username).exists():
-        return Response({"error": "Utilisateur existe déjà"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Utilisateur existe déjà"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     user = User.objects.create_user(
         username=username,
@@ -38,7 +44,10 @@ def register(request):
         user.role = "patient"
         user.save()
 
-    return Response({"message": "OK"}, status=status.HTTP_201_CREATED)
+    return Response(
+        {"message": "OK"},
+        status=status.HTTP_201_CREATED
+    )
 
 
 # =========================
@@ -54,7 +63,10 @@ def login_view(request):
     password = data.get("password")
 
     if not username or not password:
-        return Response({"detail": "Champs manquants"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "Champs manquants"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     user = authenticate(username=username, password=password)
 
@@ -75,7 +87,10 @@ def login_view(request):
 
     print("❌ LOGIN FAILED :", username)
 
-    return Response({"detail": "Identifiants invalides"}, status=status.HTTP_401_UNAUTHORIZED)
+    return Response(
+        {"detail": "Identifiants invalides"},
+        status=status.HTTP_401_UNAUTHORIZED
+    )
 
 
 # =========================
@@ -106,7 +121,8 @@ def search_patients(request):
 
 
 # =========================
-# SAVE FCM TOKEN (VERSION FINALE)
+# SAVE FCM TOKEN
+# SINGLE ACTIVE DEVICE INTELLIGENT
 # =========================
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -125,16 +141,30 @@ def save_fcm_token(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 🔥 Sauvegarde sur le bon user
+        # 🔥 Si ce token existe déjà ailleurs,
+        # on le retire de l'ancien compte/appareil
+        User.objects.filter(
+            fcm_token=token
+        ).exclude(
+            id=user.id
+        ).update(
+            fcm_token=None
+        )
+
+        # 🔥 On assigne le token au user connecté
         user.fcm_token = token
-        user.save()
+        user.save(update_fields=["fcm_token"])
 
-        print("💾 TOKEN SAUVEGARDÉ EN DB POUR :", user.username)
+        print("💾 TOKEN ACTIF POUR :", user.username)
 
-        return Response({"message": "Token enregistré"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Token enregistré"},
+            status=status.HTTP_200_OK
+        )
 
     except Exception as e:
         print("❌ ERREUR SAVE TOKEN :", str(e))
+
         return Response(
             {"error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
