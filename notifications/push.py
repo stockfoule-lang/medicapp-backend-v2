@@ -25,7 +25,7 @@ def initialize_firebase():
 
 
 # =========================
-# 🔔 ENVOI NOTIFICATION
+# 🔔 ENVOI NOTIFICATION (VERSION PRO)
 # =========================
 
 def send_push_notification(token, title, body):
@@ -34,10 +34,31 @@ def send_push_notification(token, title, body):
         initialize_firebase()
 
         message = messaging.Message(
+            # 🔔 NOTIFICATION STANDARD (OBLIGATOIRE POUR BACKGROUND / KILLED)
             notification=messaging.Notification(
                 title=title,
                 body=body,
             ),
+
+            # 🔥 CONFIG ANDROID (CRITIQUE)
+            android=messaging.AndroidConfig(
+                priority="high",
+                notification=messaging.AndroidNotification(
+                    sound="default",
+                    channel_id="medicapp_channel_v2",
+                ),
+            ),
+
+            # 🔥 CONFIG iOS (SAFE / FUTUR)
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                        sound="default"
+                    )
+                )
+            ),
+
+            # 🎯 TOKEN CIBLE
             token=token,
         )
 
